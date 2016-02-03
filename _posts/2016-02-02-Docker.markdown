@@ -1,0 +1,54 @@
+---
+layout: post
+title:  Docker for dummies
+#date:   2015-11-14 16:52:07
+categories: container
+tags: container docker
+image: http://cdn.meme.am/instances/500x/56291573.jpg
+---
+
+
+> Docker is an open-source project to easily create lightweight, portable, self-sufficient containers from any application. The same container that a developer builds and tests on a laptop can run at scale, in production, on VMs, bare metal, OpenStack clusters, public clouds and more
+
+
+
+
+If you have been around the internet recently, you would have heard the term Containers a lot. Containers are nothing but Operating-system-level virtualization. With almost zero overhead the effects of this delivers some impactful advantages.
+
+To show the easiness in using docker, let me show a few commands that docker does.
+
+
+To pull a container from the docker index, the command you would use is *docker pull*
+
+  `docker pull ubuntu`
+
+
+In order to run a process or command in a container you use the docker run command. The usage syntax for run command is,
+
+  `docker run [OPTIONS] IMAGE[:TAG] [COMMAND] [ARG...]`
+
+Lets say you want to install the cURL package inside your base ubuntu image. You would use,
+
+`  docker run -t -i ubuntu apt-get install curl`
+
+
+The *-t* option tells the run command to allocate a pseudo terminal so you can see the output and the *-i* option lets us interact with the command if needed. We are using the -i (interactive) option with apt-get install since it asks us for confirmation. But if you want to do a non interactive or unattended install you could add the -y option to apt-get. Great now we have curl installed in our ubuntu base image.
+
+Now curl to pull http://www.google.com. So we use docker to run the curl command as follows.
+
+  `docker run -t ubuntu curl www.google.com`
+
+  And you get ‘Unable to locate curl‘. We just installed cURL to ubuntu. Why isn’t it working then? Well the answer lies in the way Docker saves images. Whenever you make changes to an image/container, the changes are not stored in the base image. Instead the change (only the change!) is stored in a new image and these images are given ID tags. So what you have to do is run the curl command on the newly created image. How do you find the ID of the image which stored your curl installation? To do that we need to use the *ps* command. Run this.
+
+  `docker ps -a`
+
+This will give you a list of images, their IDs and the command that was run. In your list you will probably see an image with the command `curl http://www.google.com` on top. This is the image that was created when you ran the curl command on ubuntu unsuccessfully (hence the exit status 127 [command not found]. If it was successful exit status would be 0). The image you need is the one where you installed cURL. You will have the command as `apt-get -y install c` or something very similar to that. Inorder to use this image to run subsequent commands, we need to save it or in other words commit it. You use the *docker commit* command to do that. You need to pass the ID of the image and a name for the container as an argument. You need not copy the entire ID string. You can just use the first 3 to 4 characters. As for the name, the format is *<top level name>/container-name*. Eg. tutorial/curl. Lets go ahead and commit our work.
+
+  `docker commit 5c51 tutorial/curl`
+(use your ID inplace of 5c51).
+
+Great! You’ve committed the image with the name tutorial/curl or whatever name you gave. When you run docker images, you will see your image among the list of available repositories. Ive used the word repositories here. A repository is a collection of images. So in our repository we would have the base ubuntu image and then the image we got by installing curl. Thus we have a layered system. Now let us run the curl command on our new container.
+
+`docker run -t tutorial/curl curl www.google.com`
+
+Did you get the google.com HTML response with the 301 message? Great. It works! 
